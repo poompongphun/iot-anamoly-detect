@@ -21,7 +21,7 @@ class SensorDataModelViewSet(viewsets.ModelViewSet):
             'temperature',
             'humidity',
             'air_quality'
-        ).order_by('-timestamp').distinct()
+        ).order_by('timestamp').distinct()
     serializer_class = SensorSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = SensorFilter
@@ -45,13 +45,24 @@ class SensorDataModelViewSet(viewsets.ModelViewSet):
             z_humidity = (sensor['humidity'] - stats['avg_humidity']) / stats['std_humidity'] if stats['std_humidity'] else 0
             z_air_quality = (sensor['air_quality'] - stats['avg_air_quality']) / stats['std_air_quality'] if stats['std_air_quality'] else 0
 
-            sensor['z_scores'] = {
-                'temperature': z_temp,
-                'humidity': z_humidity,
-                'air_quality': z_air_quality
+            tmp_temperature = {
+                "value": sensor['temperature'],
+                "z_score": z_temp,
+                "anomaly": abs(z_temp) > 3
             }
-
-            sensor['anomaly'] = abs(z_temp) > 3 or abs(z_humidity) > 3 or abs(z_air_quality) > 3
+            tmp_humidity = {
+                "value": sensor['humidity'],
+                "z_score": z_humidity,
+                "anomaly": abs(z_humidity) > 3
+            }
+            tmp_air_quality = {
+                "value": sensor['air_quality'],
+                "z_score": z_air_quality,
+                "anomaly": abs(z_air_quality) > 3
+            }
+            sensor['temperature'] = tmp_temperature
+            sensor['humidity'] = tmp_humidity
+            sensor['air_quality'] = tmp_air_quality
 
         return Response(filtered_queryset)
 
@@ -77,24 +88,31 @@ class SensorDataModelViewSet(viewsets.ModelViewSet):
 
         def safe_median(data):
             data = [x for x in data if x is not None]
-            return float(np.median(data)) if data else None
+            return {"median": float(np.median(data)), "sd": float(np.std(data))} if data else None
+
+        tempAgg = safe_median(temperatures)
+        humiAgg = safe_median(humidities)
+        airAgg = safe_median(air_qualities)
 
         response_data = {
             "temperature": {
                 "mean": aggregated_data["mean_temp"],
-                "median": safe_median(temperatures),
+                "median": tempAgg['median'] if tempAgg else None,
+                "sd": tempAgg['sd'] if tempAgg else None,
                 "min": aggregated_data["min_temp"],
                 "max": aggregated_data["max_temp"],
             },
             "humidity": {
                 "mean": aggregated_data["mean_humidity"],
-                "median": safe_median(humidities),
+                "median": humiAgg['median'] if humiAgg else None,
+                "sd": humiAgg['sd'] if humiAgg else None,
                 "min": aggregated_data["min_humidity"],
                 "max": aggregated_data["max_humidity"],
             },
             "air_quality": {
                 "mean": aggregated_data["mean_air_quality"],
-                "median": safe_median(air_qualities),
+                "median": airAgg['median'] if airAgg else None,
+                "sd": airAgg['sd'] if airAgg else None,
                 "min": aggregated_data["min_air_quality"],
                 "max": aggregated_data["max_air_quality"],
             }

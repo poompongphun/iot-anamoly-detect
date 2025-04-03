@@ -4,3 +4,4 @@ django-filter
 mysqlclient
 numpy
 pandas
+django-cors-headers
