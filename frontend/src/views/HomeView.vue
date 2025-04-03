@@ -1,8 +1,13 @@
 <script lang="ts" setup>
 import SensorChart from "@/components/SensorChart.vue";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, useTemplateRef } from "vue";
 import moment from "moment";
-import type { AggregatedSensorData, Choice, ProcessedSensorData, TimestampRange } from "@/types";
+import type {
+  AggregatedSensorData,
+  Choice,
+  ProcessedSensorData,
+  TimestampRange,
+} from "@/types";
 import SensorAPI from "@/api/sensor";
 
 const choices = ["temperature", "humidity", "air_quality"];
@@ -20,6 +25,12 @@ const range = ref<TimestampRange>({ timestamp_after: null, timestamp_before: nul
 const showCustomRange = ref(false);
 const loading = ref(false);
 
+const toInput = useTemplateRef("to");
+const customRange = ref({
+  timestamp_after: null,
+  timestamp_before: null,
+});
+
 const processedData = ref<ProcessedSensorData[]>([]);
 const aggregatedData = ref<AggregatedSensorData>();
 
@@ -32,17 +43,28 @@ const updateRange = async (event: Event) => {
     return;
   }
 
+  showCustomRange.value = false;
+
   if (value === "0") {
     range.value = { timestamp_after: null, timestamp_before: null };
     await fetchData();
     return;
   }
 
-  showCustomRange.value = false;
   const timestamp_after = moment().subtract(value, "seconds").toISOString();
   const timestamp_before = moment().toISOString();
   range.value = { timestamp_after, timestamp_before };
   await fetchData();
+};
+
+const submitCustomRange = async () => {
+  if (customRange.value.timestamp_after && customRange.value.timestamp_before) {
+    range.value = {
+      timestamp_after: moment(customRange.value.timestamp_after).toISOString(),
+      timestamp_before: moment(customRange.value.timestamp_before).toISOString(),
+    };
+    await fetchData();
+  }
 };
 
 const fetchProcessedData = async () => {
@@ -82,7 +104,7 @@ onMounted(async () => {
   <div>
     <h1 class="text-2xl font-bold text-center py-3">IoT Data Processing</h1>
 
-    <div class="flex flex-col justify-center relative mx-4">
+    <div class="flex flex-col justify-center relative px-4 mx-auto w-[80%]">
       <div class="flex justify-between">
         <div
           class="flex item-center border-t border-x border-gray-300 rounded-t overflow-hidden"
@@ -102,16 +124,55 @@ onMounted(async () => {
         </div>
 
         <div>
-          <select
-            id="range"
-            class="border border-gray-300 text-sm rounded block w-full p-1.5"
-            @change="updateRange"
-          >
-            <option v-for="(item, index) in preRange" :key="index" :value="item.value">
-              {{ item.label }}
-            </option>
-            <option value="custom">Custom</option>
-          </select>
+          <div class="flex item-center">
+            <select
+              id="range"
+              class="border border-gray-300 text-sm rounded block w-full p-1.5"
+              @change="updateRange"
+            >
+              <option v-for="(item, index) in preRange" :key="index" :value="item.value">
+                {{ item.label }}
+              </option>
+              <option value="custom">Custom</option>
+            </select>
+
+            <form
+              v-if="showCustomRange"
+              class="flex gap-2 ml-4 items-center"
+              @submit.prevent="submitCustomRange"
+            >
+              <input
+                v-model="customRange.timestamp_after"
+                type="datetime-local"
+                class="border border-gray-300 text-sm rounded block w-full p-1.5"
+                name="from"
+                :max="
+                  customRange.timestamp_before
+                    ? customRange.timestamp_before
+                    : moment().format('YYYY-MM-DDTHH:mm')
+                "
+                @change="toInput?.focus()"
+              />
+              <span>To</span>
+              <input
+                ref="to"
+                v-model="customRange.timestamp_before"
+                type="datetime-local"
+                class="border border-gray-300 text-sm rounded block w-full p-1.5"
+                name="to"
+                :min="
+                  customRange.timestamp_after ? customRange.timestamp_after : undefined
+                "
+                :max="moment().format('YYYY-MM-DDTHH:mm')"
+              />
+              <button
+                type="submit"
+                class="bg-blue-500 text-white py-1.5 px-4 text-sm rounded"
+              >
+                Apply
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
