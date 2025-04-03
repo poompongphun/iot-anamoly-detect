@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql_server
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sensordb
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: password
+      MYSQL_ALLOW_PUBLIC_KEY_RETRIEVAL: "true"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - ournetwork
+
+  backend:
+    build: /backend
+    container_name: backend_service
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "8000:8000"
+    environment:
+      SQL_ENGINE: django.db.backends.mysql
+      SQL_DATABASE: sensordb
+      SQL_USER: dbuser
+      SQL_PASSWORD: password
+      SQL_HOST: mysql_server
+      SQL_PORT: 3306
+      DJANGO_ALLOWED_HOSTS: "frontend"
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
+    networks:
+      - ournetwork
+
+  frontend:
+    build: /frontend
+    container_name: fronend_service
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    environment:
+      VITE_API_URL: http://backend/
+    networks:
+      - ournetwork
+
+networks:
+  ournetwork:
+    driver: bridge
+
+volumes:
+  mysql_data:

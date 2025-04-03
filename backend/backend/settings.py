@@ -24,9 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ca9l%c9%^ig+wzxz_3^%co4%jwqy-qofpw)&!^we@wtx+w4)9s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = []
+allow_host = os.environ.get("DJANGO_ALLOWED_HOSTS")
+ALLOWED_HOSTS = [
+    'localhost',
+] + (allow_host.split(",") if allow_host else [])
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Application definition
@@ -96,7 +102,7 @@ DATABASES = {
         "USER": os.environ.get("SQL_USER", "dbuser"),
         "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
-        "PORT": os.environ.get("SQL_PORT", "3307"),
+        "PORT": os.environ.get("SQL_PORT", "3306"),
     }
 }
 
