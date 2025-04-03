@@ -41,15 +41,17 @@ services:
       - ournetwork
 
   frontend:
-    build: /frontend
+    build:
+      context: /frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: 'http://localhost:8000/'
     container_name: fronend_service
     restart: always
     depends_on:
       - backend
     ports:
       - "80:80"
-    environment:
-      VITE_API_URL: http://backend/
     networks:
       - ournetwork
 
