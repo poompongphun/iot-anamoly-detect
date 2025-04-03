@@ -1,0 +1,94 @@
+{
+	"info": {
+		"_postman_id": "1e021dd0-2457-460b-83bc-b4ab75c244b3",
+		"name": "IOT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12021569"
+	},
+	"item": [
+		{
+			"name": "Create sensor data",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"temperature\": 10,\r\n    \"humidity\": 20,\r\n    \"air_quality\": 30\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASEURL}}/sensor/data/",
+					"host": [
+						"{{BASEURL}}"
+					],
+					"path": [
+						"sensor",
+						"data",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get processed data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASEURL}}/sensor/processed?timestamp_after=2025-01-29T20:07:03Z&timestamp_before=2025-04-02T14:32:55.702428Z",
+					"host": [
+						"{{BASEURL}}"
+					],
+					"path": [
+						"sensor",
+						"processed"
+					],
+					"query": [
+						{
+							"key": "timestamp_after",
+							"value": "2025-01-29T20:07:03Z"
+						},
+						{
+							"key": "timestamp_before",
+							"value": "2025-04-02T14:32:55.702428Z"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get aggregated data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASEURL}}/sensor/aggregated?timestamp_after=2025-01-29T20:07:03Z&timestamp_before=2025-04-02T14:32:55.702428Z",
+					"host": [
+						"{{BASEURL}}"
+					],
+					"path": [
+						"sensor",
+						"aggregated"
+					],
+					"query": [
+						{
+							"key": "timestamp_after",
+							"value": "2025-01-29T20:07:03Z"
+						},
+						{
+							"key": "timestamp_before",
+							"value": "2025-04-02T14:32:55.702428Z"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
