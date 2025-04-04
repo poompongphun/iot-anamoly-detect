@@ -230,5 +230,7 @@ watch(() => types, updateChart);
     </div>
 
     <canvas ref="chartCanvas"></canvas>
+
+    <p class="text-xs text-right p-1 text-gray-600">**Graph data is not realtime**</p>
   </div>
 </template>
