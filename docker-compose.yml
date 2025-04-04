@@ -34,6 +34,7 @@ services:
       SQL_HOST: mysql_server
       SQL_PORT: 3306
       DJANGO_ALLOWED_HOSTS: "frontend"
+      DEBUG: False
     command: >
       sh -c "python manage.py migrate &&
              gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
