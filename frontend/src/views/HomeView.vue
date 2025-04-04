@@ -185,7 +185,7 @@ onMounted(async () => {
         <div class="border-1 border-gray-300 rounded-r rounded-b w-full">
           <div v-if="loading" class="text-center py-5">Loading...</div>
           <SensorChart
-            v-else-if="aggregatedData"
+            v-else-if="processedData.length > 0 && aggregatedData"
             :types="selected"
             :data="processedData"
             :aggegrated-data="aggregatedData"

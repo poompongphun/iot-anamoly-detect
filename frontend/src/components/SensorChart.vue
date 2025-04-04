@@ -132,7 +132,7 @@ const getChartData = (): any => {
       },
       {
         type: "line",
-        label: "Mean + 2SD",
+        label: "Mean - 2SD",
         data: [
           {
             x: dotData[0].x,
@@ -149,7 +149,7 @@ const getChartData = (): any => {
       },
       {
         type: "line",
-        label: "Mean + 3SD",
+        label: "Mean - 3SD",
         data: [
           {
             x: dotData[0].x,
