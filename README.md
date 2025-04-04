@@ -68,7 +68,7 @@ Then run the following command to start the database:
 docker-compose up -d
 ```
 
-Next, you can import initial data into the database. Use the `assets/sensor_data.csv` file to import data into the database. You can use any MySQL client to do this. For example, you can use MySQL Workbench or DBeaver.
+Next, you can import initial data into the database. Use the `assets/sensor_data.csv` file to import data into the database (sensor_sensor table). You can use any MySQL client to do this. For example, you can use MySQL Workbench or DBeaver.
 
 
 ### Backend

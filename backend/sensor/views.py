@@ -35,34 +35,25 @@ class SensorDataModelViewSet(viewsets.ModelViewSet):
         filtered_queryset = self.filter_queryset(self.get_queryset())
 
         stats = filtered_queryset.aggregate(
-            avg_temperature=Avg('temperature'), std_temperature=StdDev('temperature'),
-            avg_humidity=Avg('humidity'), std_humidity=StdDev('humidity'),
-            avg_air_quality=Avg('air_quality'), std_air_quality=StdDev('air_quality')
+            avg_temperature=Avg('temperature'),
+            std_temperature=StdDev('temperature'),
+            avg_humidity=Avg('humidity'),
+            std_humidity=StdDev('humidity'),
+            avg_air_quality=Avg('air_quality'),
+            std_air_quality=StdDev('air_quality')
         )
 
-        for sensor in filtered_queryset:
-            z_temp = (sensor['temperature'] - stats['avg_temperature']) / stats['std_temperature'] if stats['std_temperature'] else 0
-            z_humidity = (sensor['humidity'] - stats['avg_humidity']) / stats['std_humidity'] if stats['std_humidity'] else 0
-            z_air_quality = (sensor['air_quality'] - stats['avg_air_quality']) / stats['std_air_quality'] if stats['std_air_quality'] else 0
+        def calc_z_score(value, avg, std):
+            return (value - avg) / std if std else 0
 
-            tmp_temperature = {
-                "value": sensor['temperature'],
-                "z_score": z_temp,
-                "anomaly": abs(z_temp) > 3
-            }
-            tmp_humidity = {
-                "value": sensor['humidity'],
-                "z_score": z_humidity,
-                "anomaly": abs(z_humidity) > 3
-            }
-            tmp_air_quality = {
-                "value": sensor['air_quality'],
-                "z_score": z_air_quality,
-                "anomaly": abs(z_air_quality) > 3
-            }
-            sensor['temperature'] = tmp_temperature
-            sensor['humidity'] = tmp_humidity
-            sensor['air_quality'] = tmp_air_quality
+        for sensor in filtered_queryset:
+            for key in ['temperature', 'humidity', 'air_quality']:
+                z_score = calc_z_score(sensor[key], stats['avg_' + key], stats['std_' + key])
+                sensor[key] = {
+                    "value": sensor[key],
+                    "z_score": z_score,
+                    "anomaly": abs(z_score) > 3
+                }
 
         return Response(filtered_queryset)
 
@@ -74,45 +65,42 @@ class SensorDataModelViewSet(viewsets.ModelViewSet):
             mean_temp=Avg('temperature'),
             min_temp=Min('temperature'),
             max_temp=Max('temperature'),
+            sd_temp=StdDev('temperature'),
             mean_humidity=Avg('humidity'),
             min_humidity=Min('humidity'),
             max_humidity=Max('humidity'),
+            sd_humidity=StdDev('humidity'),
             mean_air_quality=Avg('air_quality'),
             min_air_quality=Min('air_quality'),
             max_air_quality=Max('air_quality'),
+            sd_air_quality=StdDev('air_quality')
         )
 
-        temperatures = list(filtered_queryset.values_list('temperature', flat=True))
-        humidities = list(filtered_queryset.values_list('humidity', flat=True))
-        air_qualities = list(filtered_queryset.values_list('air_quality', flat=True))
-
-        def safe_median(data):
-            data = [x for x in data if x is not None]
-            return {"median": float(np.median(data)), "sd": float(np.std(data))} if data else None
-
-        tempAgg = safe_median(temperatures)
-        humiAgg = safe_median(humidities)
-        airAgg = safe_median(air_qualities)
+        df = pd.DataFrame(filtered_queryset)
+        if not df.empty:
+            df["temperature"] = df["temperature"].astype(float)
+            df["humidity"] = df["humidity"].astype(float)
+            df["air_quality"] = df["air_quality"].astype(float)
 
         response_data = {
             "temperature": {
                 "mean": aggregated_data["mean_temp"],
-                "median": tempAgg['median'] if tempAgg else None,
-                "sd": tempAgg['sd'] if tempAgg else None,
+                "median": df["temperature"].median() if not df.empty else None,
+                "sd": aggregated_data["sd_temp"],
                 "min": aggregated_data["min_temp"],
                 "max": aggregated_data["max_temp"],
             },
             "humidity": {
                 "mean": aggregated_data["mean_humidity"],
-                "median": humiAgg['median'] if humiAgg else None,
-                "sd": humiAgg['sd'] if humiAgg else None,
+                "median": df["humidity"].median() if not df.empty else None,
+                "sd": aggregated_data["sd_humidity"],
                 "min": aggregated_data["min_humidity"],
                 "max": aggregated_data["max_humidity"],
             },
             "air_quality": {
                 "mean": aggregated_data["mean_air_quality"],
-                "median": airAgg['median'] if airAgg else None,
-                "sd": airAgg['sd'] if airAgg else None,
+                "median": df["air_quality"].median() if not df.empty else None,
+                "sd": aggregated_data["sd_air_quality"],
                 "min": aggregated_data["min_air_quality"],
                 "max": aggregated_data["max_air_quality"],
             }
